@@ -70,6 +70,8 @@ Default to:
 
 **Last 30 Days**
 
+Also include **Last 7 Days** and **Last 90 Days** as useful comparison ranges.
+
 ### Region
 
 Options:
@@ -83,6 +85,8 @@ Options:
 Changing a filter should update the relevant dashboard metrics, charts, regional performance, exceptions, and insights.
 
 Include a simple **Reset Filters** action.
+
+Both filters apply consistently to all dashboard sections, including open exceptions.
 
 ---
 
@@ -192,3 +196,13 @@ Possible fictional exception types include:
 - Weather Delay
 - Capacity Constraint
 - Missed Connection
+- Customs Hold
+
+Use the following severity levels:
+
+- Critical
+- High
+- Medium
+- Low
+
+Exceptions are for visibility and leadership triage in this prototype. Users do not need to take action on or manage exceptions. Their status should be shown as **Open**.
