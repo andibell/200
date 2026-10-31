@@ -1,42 +1,68 @@
-# my-dashboard
+# FastForward Logistics Operations Command Center
 
-This template should help get you started developing with Vue 3 in Vite.
+## Overview
 
-## Recommended IDE Setup
+FastForward Logistics is a fictional freight and supply chain company. This dashboard gives its operations leadership one place to review network health, compare regions, and identify delivery issues that may need attention.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+It is designed primarily for a VP of Operations preparing for leadership discussions, with useful detail for operations managers and regional leaders investigating performance.
 
-## Recommended Browser Setup
+## Features
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- **Executive overview:** shipment volume, on-time delivery, open exceptions, and freight cost, with period comparisons where applicable.
+- **Performance trend:** shipment volume and on-time delivery over time, including a 95% delivery target reference.
+- **Global filters:** view the last 7, 30, or 90 days and select a region. These filters update the dashboard consistently and can be reset.
+- **Regional Performance:** compare shipment volume, on-time delivery, open exceptions, freight cost, and operational status. Sort the table by its performance columns and expand a region for target comparison, period changes, exception severity counts, and common exception types.
+- **Open Exceptions:** review exception ID, region, shipment/lane reference, type, severity, age, description, and status. Sort by table columns; filter by severity or type; and search IDs, references, or descriptions. Table controls only affect the exception rows and preserve a helpful empty state.
+- **Needs Attention:** a concise insight highlights critical exceptions, below-target regional delivery, or recurring high-severity issue types.
 
-## Type Support for `.vue` Imports in TS
+## Data
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+All data is fictional and synthetic. No real client, company, customer, employee, shipper, lane, cost, or operational data is used. Regional baselines and sample exceptions are stored in `src/data/metrics.json`; the dashboard generates synthetic daily shipment, delivery, and cost records from those baselines. There is no live operational data source.
 
-## Customize configuration
+## Technology
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- Vue 3 with TypeScript and the Composition API
+- Vite
+- Chart.js with vue-chartjs
+- Vue Router
 
-## Project Setup
+## Run locally
+
+Use Node.js `^22.18.0` or `>=24.12.0` and npm.
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Vite prints a local URL when the development server is ready.
+
+## Production build
 
 ```sh
 npm run build
 ```
+
+This type-checks the Vue/TypeScript project and creates the production build in `dist/`. To serve that build locally, run `npm run preview`.
+
+## Project structure
+
+```text
+src/
+  components/
+    MetricCard.vue                 Reusable executive metric card
+    PerformanceTrendChart.vue      Dual-axis shipment and on-time chart
+  data/
+    metrics.json                   Synthetic regional baselines and exceptions
+  router/
+    index.ts                       Application routes
+  views/
+    HomeView.vue                   Dashboard calculations, filters, and tables
+  assets/
+    base.css                       Base styles
+    main.css                       Dashboard layout and component styles
+```
+
+## UX approach
+
+The page prioritizes executive information hierarchy: key metrics and a needs-attention insight come before trends and regional detail. Global date and region filters provide a consistent dashboard-wide view. Regional Performance uses progressive disclosure: sorting supports comparison, while expandable rows reveal concise explanations without nesting another dashboard. Open Exceptions supports focused triage with local sorting, severity and type filters, and search, without changing the executive metrics or other dashboard sections.
