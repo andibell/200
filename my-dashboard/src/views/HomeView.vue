@@ -7,6 +7,7 @@ import metrics from '../data/metrics.json'
 type RegionName = 'North America' | 'Europe' | 'Asia Pacific' | 'Latin America'
 type Severity = 'Critical' | 'High' | 'Medium' | 'Low'
 type RegionStatus = 'Healthy' | 'Watch' | 'At Risk'
+type ExceptionSortKey = 'id' | 'region' | 'reference' | 'type' | 'severity' | 'age' | 'description'
 
 interface DailyRecord {
   daysAgo: number
@@ -125,8 +126,61 @@ const severityRank: Record<Severity, number> = {
   Low: 3,
 }
 
+const severityFilter = ref<Severity | ''>('')
+const typeFilter = ref('')
+const exceptionSearch = ref('')
+const exceptionSortKey = ref<ExceptionSortKey>('severity')
+const exceptionSortDirection = ref<'asc' | 'desc'>('asc')
+const exceptionTypes = [...new Set(exceptions.map((exception) => exception.type))].sort((a, b) =>
+  a.localeCompare(b),
+)
+
+const tableExceptions = computed(() => {
+  const search = exceptionSearch.value.trim().toLowerCase()
+  return selectedExceptions.value
+    .filter(
+      (exception) =>
+        (!severityFilter.value || exception.severity === severityFilter.value) &&
+        (!typeFilter.value || exception.type === typeFilter.value) &&
+        (!search ||
+          [exception.id, exception.reference, exception.description].some((value) =>
+            value.toLowerCase().includes(search),
+          )),
+    )
+    .sort((a, b) => {
+      let comparison = 0
+      switch (exceptionSortKey.value) {
+        case 'severity':
+          comparison = severityRank[a.severity] - severityRank[b.severity]
+          break
+        case 'age':
+          comparison = a.daysAgo - b.daysAgo
+          break
+        case 'id':
+        case 'region':
+        case 'reference':
+        case 'type':
+        case 'description':
+          comparison = a[exceptionSortKey.value].localeCompare(b[exceptionSortKey.value])
+          break
+      }
+
+      if (comparison !== 0) {
+        return comparison * (exceptionSortDirection.value === 'asc' ? 1 : -1)
+      }
+      if (exceptionSortKey.value === 'severity' && a.daysAgo !== b.daysAgo) {
+        return b.daysAgo - a.daysAgo
+      }
+      return a.id.localeCompare(b.id)
+    })
+})
+
 const criticalExceptions = computed(
   () => selectedExceptions.value.filter((exception) => exception.severity === 'Critical').length,
+)
+
+const tableCriticalExceptions = computed(
+  () => tableExceptions.value.filter((exception) => exception.severity === 'Critical').length,
 )
 
 const regionalPerformance = computed(() =>
@@ -291,6 +345,36 @@ function formatPointChange(value: number) {
 function resetFilters() {
   selectedRange.value = '30'
   selectedRegion.value = 'all'
+}
+
+function sortExceptionsBy(key: ExceptionSortKey) {
+  if (exceptionSortKey.value === key) {
+    exceptionSortDirection.value = exceptionSortDirection.value === 'asc' ? 'desc' : 'asc'
+    return
+  }
+
+  exceptionSortKey.value = key
+  exceptionSortDirection.value = key === 'age' ? 'desc' : 'asc'
+}
+
+function exceptionSortAria(key: ExceptionSortKey) {
+  if (exceptionSortKey.value !== key) return 'none'
+  return exceptionSortDirection.value === 'asc' ? 'ascending' : 'descending'
+}
+
+function exceptionSortLabel(label: string, key: ExceptionSortKey) {
+  return `Sort by ${label}${exceptionSortKey.value === key ? `, ${exceptionSortDirection.value === 'asc' ? 'ascending' : 'descending'}` : ''}`
+}
+
+function exceptionSortIndicator(key: ExceptionSortKey) {
+  if (exceptionSortKey.value !== key) return '↕'
+  return exceptionSortDirection.value === 'asc' ? '↑' : '↓'
+}
+
+function clearExceptionFilters() {
+  severityFilter.value = ''
+  typeFilter.value = ''
+  exceptionSearch.value = ''
 }
 
 function exceptionAge(daysAgo: number) {
@@ -506,26 +590,82 @@ function exceptionAge(daysAgo: number) {
               <p>Unresolved operational issues in the selected period</p>
             </div>
             <div class="exception-summary">
-              <span class="exception-summary__critical">{{ criticalExceptions }} critical</span>
-              <span>{{ selectedExceptions.length }} total</span>
+              <span class="exception-summary__critical">{{ tableCriticalExceptions }} critical</span>
+              <span>{{ tableExceptions.length }} shown</span>
             </div>
+          </div>
+          <div class="exception-controls" role="group" aria-label="Exception table filters">
+            <label class="exception-control" for="exception-severity">
+              <span>Severity</span>
+              <select id="exception-severity" v-model="severityFilter">
+                <option value="">All severities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </label>
+            <label class="exception-control" for="exception-type">
+              <span>Type</span>
+              <select id="exception-type" v-model="typeFilter">
+                <option value="">All types</option>
+                <option v-for="type in exceptionTypes" :key="type" :value="type">{{ type }}</option>
+              </select>
+            </label>
+            <label class="exception-control exception-control--search" for="exception-search">
+              <span>Search</span>
+              <input
+                id="exception-search"
+                v-model="exceptionSearch"
+                type="search"
+                placeholder="ID, shipment/lane, description"
+              />
+            </label>
           </div>
           <div class="table-scroll">
             <table class="exceptions-table">
               <thead>
                 <tr>
-                  <th scope="col">EXCEPTION</th>
-                  <th scope="col">REGION</th>
-                  <th scope="col">SHIPMENT / LANE</th>
-                  <th scope="col">TYPE</th>
-                  <th scope="col">SEVERITY</th>
-                  <th scope="col">AGE</th>
-                  <th scope="col">DESCRIPTION</th>
+                  <th scope="col" :aria-sort="exceptionSortAria('id')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('exception ID', 'id')" @click="sortExceptionsBy('id')">
+                      EXCEPTION <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('id') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="exceptionSortAria('region')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('region', 'region')" @click="sortExceptionsBy('region')">
+                      REGION <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('region') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="exceptionSortAria('reference')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('shipment or lane', 'reference')" @click="sortExceptionsBy('reference')">
+                      SHIPMENT / LANE <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('reference') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="exceptionSortAria('type')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('type', 'type')" @click="sortExceptionsBy('type')">
+                      TYPE <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('type') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="exceptionSortAria('severity')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('severity', 'severity')" @click="sortExceptionsBy('severity')">
+                      SEVERITY <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('severity') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="exceptionSortAria('age')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('age', 'age')" @click="sortExceptionsBy('age')">
+                      AGE <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('age') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="exceptionSortAria('description')">
+                    <button class="sort-button" type="button" :aria-label="exceptionSortLabel('description', 'description')" @click="sortExceptionsBy('description')">
+                      DESCRIPTION <span class="sort-indicator" aria-hidden="true">{{ exceptionSortIndicator('description') }}</span>
+                    </button>
+                  </th>
                   <th scope="col">STATUS</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="exception in selectedExceptions" :key="exception.id">
+                <tr v-for="exception in tableExceptions" :key="exception.id">
                   <th scope="row" class="exception-id">{{ exception.id }}</th>
                   <td>{{ exception.region }}</td>
                   <td class="reference-cell">{{ exception.reference }}</td>
@@ -539,10 +679,19 @@ function exceptionAge(daysAgo: number) {
                   <td class="description-cell">{{ exception.description }}</td>
                   <td><span class="open-status"><span></span>Open</span></td>
                 </tr>
-                <tr v-if="selectedExceptions.length === 0">
+                <tr v-if="tableExceptions.length === 0">
                   <td colspan="8" class="empty-state">
-                    <strong>No open exceptions in this view</strong>
-                    <span>Try a longer date range or a different region.</span>
+                    <template v-if="selectedExceptions.length === 0">
+                      <strong>No open exceptions in this view</strong>
+                      <span>Try a longer date range or a different region.</span>
+                    </template>
+                    <template v-else>
+                      <strong>No exceptions match these filters</strong>
+                      <span>Adjust your search or clear the table filters.</span>
+                      <button class="empty-state__reset" type="button" @click="clearExceptionFilters">
+                        Clear table filters
+                      </button>
+                    </template>
                   </td>
                 </tr>
               </tbody>

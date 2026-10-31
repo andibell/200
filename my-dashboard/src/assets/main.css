@@ -779,6 +779,53 @@
   font-weight: 650;
 }
 
+.exception-controls {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.7fr) minmax(150px, 0.8fr) minmax(220px, 1.5fr);
+  gap: 8px;
+  margin: -2px 0 12px;
+}
+
+.exception-control {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: #8994a2;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.35px;
+}
+
+.exception-control select,
+.exception-control input {
+  width: 100%;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid #e4e8ed;
+  border-radius: 5px;
+  outline: 0;
+  color: #526277;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 450;
+  letter-spacing: normal;
+}
+
+.exception-control select {
+  cursor: pointer;
+}
+
+.exception-control input::placeholder {
+  color: #a0a9b5;
+}
+
+.exception-control select:focus-visible,
+.exception-control input:focus-visible {
+  border-color: #55bba9;
+  outline: 2px solid #c8eee7;
+  outline-offset: 1px;
+}
+
 .exceptions-table {
   min-width: 980px;
 }
@@ -786,6 +833,36 @@
 .exceptions-table thead th {
   padding-top: 9px;
   padding-bottom: 9px;
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sort-button:hover {
+  color: #52677e;
+}
+
+.sort-button:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #3fbda7;
+  outline-offset: 3px;
+}
+
+.sort-indicator {
+  color: #a1aab5;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .exceptions-table tbody th,
@@ -872,6 +949,27 @@
   margin-bottom: 4px;
   color: #41536a;
   font-size: 11px;
+}
+
+.empty-state__reset {
+  margin-top: 8px;
+  padding: 5px 8px;
+  border: 1px solid #dfe7e9;
+  border-radius: 4px;
+  color: #3e8278;
+  background: #f8fbfb;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.empty-state__reset:hover {
+  background: #edf7f5;
+}
+
+.empty-state__reset:focus-visible {
+  outline: 2px solid #3fbda7;
+  outline-offset: 2px;
 }
 
 .empty-state span {
@@ -1086,6 +1184,14 @@
 
   .exception-summary > span {
     padding: 4px 6px;
+  }
+
+  .exception-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .exception-control--search {
+    grid-column: 1 / -1;
   }
 
   .page-footer {
