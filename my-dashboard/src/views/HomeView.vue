@@ -8,6 +8,7 @@ type RegionName = 'North America' | 'Europe' | 'Asia Pacific' | 'Latin America'
 type Severity = 'Critical' | 'High' | 'Medium' | 'Low'
 type RegionStatus = 'Healthy' | 'Watch' | 'At Risk'
 type ExceptionSortKey = 'id' | 'region' | 'reference' | 'type' | 'severity' | 'age' | 'description'
+type RegionalSortKey = 'shipments' | 'onTimeRate' | 'openExceptions' | 'freightCost' | 'status'
 
 interface DailyRecord {
   daysAgo: number
@@ -189,14 +190,58 @@ const regionalPerformance = computed(() =>
     .map((region) => {
       const records = selectedRecords.value.filter((record) => record.region === region.name)
       const summary = summarize(records)
-      const openExceptions = selectedExceptions.value.filter(
+      const previousRegionSummary = summarize(
+        previousRecords.value.filter((record) => record.region === region.name),
+      )
+      const regionExceptions = selectedExceptions.value.filter(
         (exception) => exception.region === region.name,
-      ).length
+      )
+      const openExceptions = regionExceptions.length
+      const severityCounts = regionExceptions.reduce(
+        (counts, exception) => {
+          counts[exception.severity] += 1
+          return counts
+        },
+        { Critical: 0, High: 0, Medium: 0, Low: 0 },
+      )
+      const exceptionTypeCounts = [...regionExceptions.reduce((counts, exception) => {
+        counts.set(exception.type, (counts.get(exception.type) ?? 0) + 1)
+        return counts
+      }, new Map<string, number>())]
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type))
       const status: RegionStatus =
         summary.onTimeRate >= 95 ? 'Healthy' : summary.onTimeRate >= 93 ? 'Watch' : 'At Risk'
-      return { ...region, ...summary, openExceptions, status }
+      return {
+        ...region,
+        ...summary,
+        openExceptions,
+        status,
+        shipmentChange: percentageChange(summary.shipments, previousRegionSummary.shipments),
+        freightChange: percentageChange(summary.freightCost, previousRegionSummary.freightCost),
+        severityCounts,
+        exceptionTypeCounts,
+      }
     }),
 )
+
+const regionalSortKey = ref<RegionalSortKey | null>(null)
+const regionalSortDirection = ref<'asc' | 'desc'>('desc')
+const expandedRegion = ref<RegionName | null>(null)
+
+const sortedRegionalPerformance = computed(() => {
+  if (!regionalSortKey.value) return regionalPerformance.value
+
+  const statusRank: Record<RegionStatus, number> = { 'At Risk': 0, Watch: 1, Healthy: 2 }
+  const key = regionalSortKey.value
+  const direction = regionalSortDirection.value === 'asc' ? 1 : -1
+
+  return [...regionalPerformance.value].sort((a, b) => {
+    const comparison =
+      key === 'status' ? statusRank[a.status] - statusRank[b.status] : a[key] - b[key]
+    return comparison * direction || a.name.localeCompare(b.name)
+  })
+})
 
 interface AttentionInsight {
   title: string
@@ -380,6 +425,42 @@ function clearExceptionFilters() {
 function exceptionAge(daysAgo: number) {
   return daysAgo === 0 ? 'Today' : `${daysAgo}d`
 }
+
+function sortRegionalPerformance(key: RegionalSortKey) {
+  if (regionalSortKey.value === key) {
+    regionalSortDirection.value = regionalSortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    regionalSortKey.value = key
+    regionalSortDirection.value = key === 'status' ? 'asc' : 'desc'
+  }
+}
+
+function regionalSortAria(key: RegionalSortKey) {
+  if (regionalSortKey.value !== key) return 'none'
+  return regionalSortDirection.value === 'asc' ? 'ascending' : 'descending'
+}
+
+function regionalSortLabel(label: string, key: RegionalSortKey) {
+  return `Sort by ${label}${regionalSortKey.value === key ? `, ${regionalSortDirection.value === 'asc' ? 'ascending' : 'descending'}` : ''}`
+}
+
+function regionalSortIndicator(key: RegionalSortKey) {
+  if (regionalSortKey.value !== key) return '↕'
+  return regionalSortDirection.value === 'asc' ? '↑' : '↓'
+}
+
+function toggleExpandedRegion(region: RegionName) {
+  expandedRegion.value = expandedRegion.value === region ? null : region
+}
+
+function targetDifference(onTimeRate: number) {
+  const difference = onTimeRate - 95
+  return `${Math.abs(difference).toFixed(1)} pp ${difference >= 0 ? 'above' : 'below'} target`
+}
+
+function formatSeverityCount(severity: Severity, count: number) {
+  return `${severity} ${count}`
+}
 </script>
 
 <template>
@@ -537,42 +618,113 @@ function exceptionAge(daysAgo: number) {
               <thead>
                 <tr>
                   <th scope="col">REGION</th>
-                  <th scope="col">SHIPMENTS</th>
-                  <th scope="col">ON-TIME</th>
-                  <th scope="col">OPEN EXCEPTIONS</th>
-                  <th scope="col">FREIGHT COST</th>
-                  <th scope="col">STATUS</th>
+                  <th scope="col" :aria-sort="regionalSortAria('shipments')">
+                    <button class="regional-sort-button" type="button" :aria-label="regionalSortLabel('shipments', 'shipments')" @click="sortRegionalPerformance('shipments')">
+                      SHIPMENTS <span aria-hidden="true">{{ regionalSortIndicator('shipments') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="regionalSortAria('onTimeRate')">
+                    <button class="regional-sort-button" type="button" :aria-label="regionalSortLabel('on-time delivery', 'onTimeRate')" @click="sortRegionalPerformance('onTimeRate')">
+                      ON-TIME <span aria-hidden="true">{{ regionalSortIndicator('onTimeRate') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="regionalSortAria('openExceptions')">
+                    <button class="regional-sort-button" type="button" :aria-label="regionalSortLabel('open exceptions', 'openExceptions')" @click="sortRegionalPerformance('openExceptions')">
+                      OPEN EXCEPTIONS <span aria-hidden="true">{{ regionalSortIndicator('openExceptions') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="regionalSortAria('freightCost')">
+                    <button class="regional-sort-button" type="button" :aria-label="regionalSortLabel('freight cost', 'freightCost')" @click="sortRegionalPerformance('freightCost')">
+                      FREIGHT COST <span aria-hidden="true">{{ regionalSortIndicator('freightCost') }}</span>
+                    </button>
+                  </th>
+                  <th scope="col" :aria-sort="regionalSortAria('status')">
+                    <button class="regional-sort-button" type="button" :aria-label="regionalSortLabel('status', 'status')" @click="sortRegionalPerformance('status')">
+                      STATUS <span aria-hidden="true">{{ regionalSortIndicator('status') }}</span>
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="region in regionalPerformance" :key="region.name">
-                  <th scope="row">
-                    <span class="region-name">
-                      <span class="region-indicator" :class="`region-indicator--${region.status.toLowerCase().replace(' ', '-')}`"></span>
-                      {{ region.name }}
-                    </span>
-                  </th>
-                  <td class="numeric-cell">{{ formatNumber(region.shipments) }}</td>
-                  <td>
-                    <span class="on-time-cell">
-                      <span class="mini-progress">
-                        <span :style="{ width: `${region.onTimeRate}%` }"></span>
+                <template v-for="region in sortedRegionalPerformance" :key="region.name">
+                  <tr class="regional-data-row">
+                    <th scope="row">
+                      <button
+                        class="region-expand-button"
+                        type="button"
+                        :aria-expanded="expandedRegion === region.name"
+                        :aria-label="`${expandedRegion === region.name ? 'Collapse' : 'Expand'} ${region.name} performance details`"
+                        @click="toggleExpandedRegion(region.name)"
+                      >
+                        <svg class="region-chevron" :class="{ 'region-chevron--expanded': expandedRegion === region.name }" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                          <path d="m6 3.5 4.5 4.5L6 12.5" />
+                        </svg>
+                        <span class="region-name">
+                          <span class="region-indicator" :class="`region-indicator--${region.status.toLowerCase().replace(' ', '-')}`"></span>
+                          {{ region.name }}
+                        </span>
+                      </button>
+                    </th>
+                    <td class="numeric-cell">{{ formatNumber(region.shipments) }}</td>
+                    <td>
+                      <span class="on-time-cell">
+                        <span class="mini-progress">
+                          <span :style="{ width: `${region.onTimeRate}%` }"></span>
+                        </span>
+                        {{ region.onTimeRate.toFixed(1) }}%
                       </span>
-                      {{ region.onTimeRate.toFixed(1) }}%
-                    </span>
-                  </td>
-                  <td>
-                    <span class="exception-count" :class="{ 'exception-count--high': region.openExceptions > 2 }">
-                      {{ region.openExceptions }}
-                    </span>
-                  </td>
-                  <td class="numeric-cell">{{ formatCurrency(region.freightCost) }}</td>
-                  <td>
-                    <span class="status-badge" :class="`status-badge--${region.status.toLowerCase().replace(' ', '-')}`">
-                      <span></span>{{ region.status }}
-                    </span>
-                  </td>
-                </tr>
+                    </td>
+                    <td>
+                      <span class="exception-count" :class="{ 'exception-count--high': region.openExceptions > 2 }">
+                        {{ region.openExceptions }}
+                      </span>
+                    </td>
+                    <td class="numeric-cell">{{ formatCurrency(region.freightCost) }}</td>
+                    <td>
+                      <span class="status-badge" :class="`status-badge--${region.status.toLowerCase().replace(' ', '-')}`">
+                        <span></span>{{ region.status }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr v-if="expandedRegion === region.name" class="regional-detail-row">
+                    <td colspan="6">
+                      <div class="regional-detail">
+                        <div class="regional-detail__item">
+                          <span class="regional-detail__label">95% target</span>
+                          <strong :class="region.onTimeRate >= 95 ? 'regional-detail__positive' : 'regional-detail__negative'">
+                            {{ targetDifference(region.onTimeRate) }}
+                          </strong>
+                        </div>
+                        <div class="regional-detail__item">
+                          <span class="regional-detail__label">Shipment volume vs. prior period</span>
+                          <strong>{{ formatPercentChange(region.shipmentChange) }}</strong>
+                        </div>
+                        <div class="regional-detail__item">
+                          <span class="regional-detail__label">Freight cost vs. prior period</span>
+                          <strong>{{ formatPercentChange(region.freightChange) }}</strong>
+                        </div>
+                        <div class="regional-detail__item">
+                          <span class="regional-detail__label">Exception severity</span>
+                          <span class="regional-severity-breakdown">
+                            <span class="regional-severity-breakdown__critical">{{ formatSeverityCount('Critical', region.severityCounts.Critical) }}</span>
+                            <span class="regional-severity-breakdown__high">{{ formatSeverityCount('High', region.severityCounts.High) }}</span>
+                            <span>{{ formatSeverityCount('Medium', region.severityCounts.Medium) }}</span>
+                            <span>{{ formatSeverityCount('Low', region.severityCounts.Low) }}</span>
+                          </span>
+                        </div>
+                        <div class="regional-detail__item regional-detail__item--types">
+                          <span class="regional-detail__label">Most common exception types</span>
+                          <span v-if="region.exceptionTypeCounts.length" class="regional-type-list">
+                            <span v-for="item in region.exceptionTypeCounts.slice(0, 3)" :key="item.type">
+                              {{ item.type }} <strong>{{ item.count }}</strong>
+                            </span>
+                          </span>
+                          <strong v-else class="regional-detail__muted">No exceptions in this period</strong>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
