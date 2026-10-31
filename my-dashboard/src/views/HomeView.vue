@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import MetricCard from '../components/MetricCard.vue'
+import PerformanceTrendChart from '../components/PerformanceTrendChart.vue'
 import metrics from '../data/metrics.json'
 
 type RegionName = 'North America' | 'Europe' | 'Asia Pacific' | 'Latin America'
@@ -147,10 +148,6 @@ interface TrendPoint {
   label: string
   shipments: number
   onTimeRate: number
-  x: number
-  barY: number
-  barHeight: number
-  lineY: number
 }
 
 const chartPoints = computed<TrendPoint[]>(() => {
@@ -173,34 +170,8 @@ const chartPoints = computed<TrendPoint[]>(() => {
     }
   })
 
-  const maxShipments = Math.max(...buckets.map((bucket) => bucket.shipments), 1)
-  const plot = { left: 58, top: 28, width: 650, height: 172 }
-  const slot = plot.width / bucketCount
-
-  return buckets.map((bucket, index) => ({
-    ...bucket,
-    x: plot.left + slot * (index + 0.5),
-    barY: plot.top + plot.height * (1 - bucket.shipments / (maxShipments * 1.15)),
-    barHeight: plot.height * (bucket.shipments / (maxShipments * 1.15)),
-    lineY: plot.top + plot.height * (1 - (bucket.onTimeRate - 88) / 12),
-  }))
+  return buckets
 })
-
-const trendPath = computed(() =>
-  chartPoints.value.map((point) => `${point.x},${point.lineY}`).join(' '),
-)
-
-const chartScale = computed(() => {
-  const max = Math.max(...chartPoints.value.map((point) => point.shipments), 1)
-  return [0, 0.33, 0.66, 1].map((ratio) => ({
-    label: new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(
-      max * ratio,
-    ),
-    y: 28 + 172 * (1 - ratio),
-  }))
-})
-
-const targetY = 28 + 172 * (1 - (95 - 88) / 12)
 
 const updatedAt = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -436,70 +407,7 @@ function exceptionAge(daysAgo: number) {
             </div>
             <span class="trend-period">{{ dateOptions.find((option) => option.value === selectedRange)?.label }}</span>
           </div>
-          <div class="chart-legend">
-            <span><i class="legend-swatch legend-swatch--bar"></i> Shipments</span>
-            <span><i class="legend-swatch legend-swatch--line"></i> On-time delivery</span>
-            <span><i class="legend-swatch legend-swatch--target"></i> 95% target</span>
-          </div>
-          <div class="chart-wrap">
-            <svg
-              class="trend-chart"
-              viewBox="0 0 760 260"
-              role="img"
-              :aria-label="`Shipment volume and on-time delivery trend over the last ${selectedDays} days`"
-            >
-              <g v-for="(scale, index) in chartScale" :key="scale.label + index">
-                <line x1="58" :y1="scale.y" x2="708" :y2="scale.y" class="chart-grid" />
-                <text x="48" :y="scale.y + 4" text-anchor="end" class="chart-axis-label">
-                  {{ scale.label }}
-                </text>
-                <text
-                  x="718"
-                  :y="scale.y + 4"
-                  text-anchor="start"
-                  class="chart-axis-label chart-axis-label--right"
-                >
-                  {{ 88 + index * 4 }}%
-                </text>
-              </g>
-              <line x1="58" :y1="targetY" x2="708" :y2="targetY" class="chart-target-line" />
-              <g v-for="(point, index) in chartPoints" :key="point.label + index">
-                <rect
-                  :x="point.x - Math.min(20, 280 / chartPoints.length)"
-                  :y="point.barY"
-                  :width="Math.min(40, 560 / chartPoints.length)"
-                  :height="point.barHeight"
-                  rx="4"
-                  class="chart-bar"
-                >
-                  <title>{{ point.label }}: {{ formatNumber(point.shipments) }} shipments</title>
-                </rect>
-                <text
-                  :x="point.x"
-                  y="226"
-                  text-anchor="middle"
-                  class="chart-date-label"
-                >
-                  {{ point.label }}
-                </text>
-              </g>
-              <polyline :points="trendPath" class="chart-line" />
-              <circle
-                v-for="(point, index) in chartPoints"
-                :key="`point-${point.label}-${index}`"
-                :cx="point.x"
-                :cy="point.lineY"
-                r="3.5"
-                class="chart-marker"
-              >
-                <title>{{ point.label }}: {{ point.onTimeRate.toFixed(1) }}% on time</title>
-              </circle>
-            </svg>
-          </div>
-          <div class="chart-axis-caption">
-            <span>SHIPMENTS</span>
-            <span>ON-TIME DELIVERY</span>
-          </div>
+          <PerformanceTrendChart :points="chartPoints" />
         </section>
 
         <section id="regions" class="panel regional-panel" aria-labelledby="regions-title">

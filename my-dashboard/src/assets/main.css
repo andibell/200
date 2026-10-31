@@ -611,127 +611,11 @@
   font-weight: 600;
 }
 
-.chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 17px;
-  margin-top: 16px;
-  color: #667487;
-  font-size: 9px;
-}
-
-.chart-legend > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.legend-swatch {
-  display: inline-block;
-  width: 14px;
-  height: 8px;
-}
-
-.legend-swatch--bar {
-  border-radius: 2px;
-  background: #cbd9e8;
-}
-
-.legend-swatch--line {
+.trend-chart-container {
   position: relative;
-  height: 2px;
-  background: #199b8d;
-}
-
-.legend-swatch--line::after {
-  position: absolute;
-  top: -2px;
-  left: 5px;
-  width: 5px;
-  height: 5px;
-  border: 1.5px solid #199b8d;
-  border-radius: 50%;
-  background: #fff;
-  content: '';
-}
-
-.legend-swatch--target {
-  height: 0;
-  border-top: 1px dashed #d69a58;
-}
-
-.chart-wrap {
-  overflow: hidden;
   width: 100%;
-  margin-top: 4px;
-}
-
-.trend-chart {
-  display: block;
-  width: 100%;
-  min-width: 560px;
-  height: 218px;
-  overflow: visible;
-}
-
-.chart-grid {
-  stroke: #edf0f4;
-  stroke-width: 1;
-}
-
-.chart-target-line {
-  stroke: #d6a168;
-  stroke-dasharray: 4 4;
-  stroke-width: 1;
-}
-
-.chart-axis-label,
-.chart-date-label {
-  fill: #8d98a6;
-  font-family: inherit;
-  font-size: 9px;
-}
-
-.chart-axis-label--right {
-  fill: #718b88;
-}
-
-.chart-date-label {
-  font-size: 8px;
-}
-
-.chart-bar {
-  fill: #cad9e8;
-  transition: fill 150ms ease;
-}
-
-.chart-bar:hover {
-  fill: #a7bfd5;
-}
-
-.chart-line {
-  fill: none;
-  stroke: #199b8d;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.5;
-}
-
-.chart-marker {
-  fill: #fff;
-  stroke: #199b8d;
-  stroke-width: 2;
-}
-
-.chart-axis-caption {
-  display: flex;
-  justify-content: space-between;
-  margin: -2px 4px 0;
-  color: #a0a9b5;
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
+  height: 280px;
+  margin-top: 12px;
 }
 
 .regional-panel,
@@ -1252,17 +1136,8 @@
     padding-left: 13px;
   }
 
-  .chart-legend {
-    gap: 11px;
-    font-size: 8px;
-  }
-
-  .chart-wrap {
-    overflow-x: auto;
-  }
-
-  .trend-chart {
-    min-width: 590px;
+  .trend-chart-container {
+    height: 250px;
   }
 
   .panel-heading--row {
