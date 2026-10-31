@@ -144,6 +144,69 @@ const regionalPerformance = computed(() =>
     }),
 )
 
+interface AttentionInsight {
+  title: string
+  detail: string
+  tone: 'critical' | 'warning' | 'watch' | 'healthy'
+}
+
+const attentionInsight = computed<AttentionInsight>(() => {
+  const criticalByRegion = selectedExceptions.value
+    .filter((exception) => exception.severity === 'Critical')
+    .reduce((counts, exception) => {
+      counts.set(exception.region, (counts.get(exception.region) ?? 0) + 1)
+      return counts
+    }, new Map<RegionName, number>())
+
+  if (criticalExceptions.value > 0) {
+    const affectedRegions = [...criticalByRegion.entries()]
+      .sort(([regionA], [regionB]) => regionA.localeCompare(regionB))
+      .map(([region]) => region)
+    return {
+      title: `${criticalExceptions.value} critical ${criticalExceptions.value === 1 ? 'exception requires' : 'exceptions require'} leadership attention.`,
+      detail: `Affected ${affectedRegions.length === 1 ? 'region' : 'regions'}: ${affectedRegions.join(', ')}.`,
+      tone: 'critical',
+    }
+  }
+
+  const lowestPerformingRegion = regionalPerformance.value
+    .filter((region) => region.onTimeRate < 95)
+    .sort((regionA, regionB) => regionA.onTimeRate - regionB.onTimeRate)[0]
+
+  if (lowestPerformingRegion) {
+    return {
+      title: `${lowestPerformingRegion.name} is below the 95% on-time delivery target.`,
+      detail: `Current performance is ${lowestPerformingRegion.onTimeRate.toFixed(1)}%, ${(95 - lowestPerformingRegion.onTimeRate).toFixed(1)} percentage points below target.`,
+      tone: 'warning',
+    }
+  }
+
+  const highSeverityCounts = selectedExceptions.value
+    .filter((exception) => exception.severity === 'High' || exception.severity === 'Critical')
+    .reduce((counts, exception) => {
+      counts.set(exception.type, (counts.get(exception.type) ?? 0) + 1)
+      return counts
+    }, new Map<string, number>())
+  const recurringHighSeverityType = [...highSeverityCounts.entries()]
+    .filter(([, count]) => count > 1)
+    .sort(([typeA, countA], [typeB, countB]) => countB - countA || typeA.localeCompare(typeB))[0]
+
+  if (recurringHighSeverityType) {
+    const [type, count] = recurringHighSeverityType
+    return {
+      title: `${type} is the most common high-severity exception type in this view.`,
+      detail: `${count} open ${type.toLowerCase()} exceptions are currently recorded.`,
+      tone: 'watch',
+    }
+  }
+
+  return {
+    title: 'No major issues detected in this view.',
+    detail: 'Regional delivery is meeting target and no critical or recurring high-severity exceptions were found.',
+    tone: 'healthy',
+  }
+})
+
 interface TrendPoint {
   label: string
   shipments: number
@@ -237,63 +300,6 @@ function exceptionAge(daysAgo: number) {
 
 <template>
   <div class="app-shell">
-    <aside class="sidebar">
-      <a class="brand" href="#overview" aria-label="FastForward Logistics home">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" fill="none">
-            <path d="M5 8h13l-4 5h13M27 24H14l4-5H5" />
-          </svg>
-        </span>
-        <span class="brand__name">fastforward<span>LOGISTICS</span></span>
-      </a>
-
-      <p class="sidebar__caption">WORKSPACE</p>
-      <nav class="side-nav" aria-label="Dashboard sections">
-        <a class="side-nav__link is-active" href="#overview">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-            <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-            <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-            <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-          </svg>
-          <span>Overview</span>
-        </a>
-        <a class="side-nav__link" href="#performance">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 19V5m0 14h16" />
-            <path d="m7 15 4-4 3 2 5-6" />
-          </svg>
-          <span>Performance</span>
-        </a>
-        <a class="side-nav__link" href="#regions">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M3.8 12h16.4M12 3.5c2.3 2.3 3.4 5.1 3.4 8.5s-1.1 6.2-3.4 8.5C9.7 18.2 8.6 15.4 8.6 12s1.1-6.2 3.4-8.5Z" />
-          </svg>
-          <span>Regional performance</span>
-        </a>
-        <a class="side-nav__link" href="#exceptions">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 3.5 21 20H3l9-16.5Z" />
-            <path d="M12 9v4m0 3h.01" />
-          </svg>
-          <span>Open exceptions</span>
-          <span class="side-nav__count">{{ selectedExceptions.length }}</span>
-        </a>
-      </nav>
-
-      <div class="sidebar__bottom">
-        <div class="network-status">
-          <span class="network-status__dot"></span>
-          <div>
-            <strong>Network status</strong>
-            <span>Live operations view</span>
-          </div>
-        </div>
-        <div class="sidebar__version">FASTFORWARD INTERNAL <span>·</span> v1.0</div>
-      </div>
-    </aside>
-
     <main id="overview" class="main-content">
       <header class="page-header">
         <div class="page-header__title">
@@ -397,6 +403,29 @@ function exceptionAge(daysAgo: number) {
             />
           </div>
         </section>
+
+        <aside
+          class="attention-callout"
+          :class="`attention-callout--${attentionInsight.tone}`"
+          aria-labelledby="attention-title"
+          aria-live="polite"
+        >
+          <span class="attention-callout__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.5 21 20H3l9-16.5Z" />
+              <path d="M12 9v4m0 3h.01" />
+            </svg>
+          </span>
+          <div class="attention-callout__content">
+            <div class="attention-callout__label" id="attention-title">Needs Attention</div>
+            <p class="attention-callout__title">{{ attentionInsight.title }}</p>
+            <p class="attention-callout__detail">{{ attentionInsight.detail }}</p>
+          </div>
+          <span class="attention-callout__scope">
+            {{ dateOptions.find((option) => option.value === selectedRange)?.label }}
+            <template v-if="selectedRegion !== 'all'"> · {{ selectedRegion }}</template>
+          </span>
+        </aside>
 
         <section id="performance" class="panel trend-panel" aria-labelledby="trend-title">
           <div class="panel-heading">

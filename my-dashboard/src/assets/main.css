@@ -8,142 +8,6 @@
   min-height: 100vh;
 }
 
-.sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  z-index: 3;
-  display: flex;
-  width: 248px;
-  flex-direction: column;
-  padding: 27px 16px 19px;
-  color: #d7dfeb;
-  background: #14243a;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 0 8px;
-  color: #fff;
-  text-decoration: none;
-}
-
-.brand__mark {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: 10px;
-  background: #1d3654;
-}
-
-.brand__mark svg {
-  width: 23px;
-  stroke: #43d5bc;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.4;
-}
-
-.brand__name {
-  display: flex;
-  flex-direction: column;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  line-height: 1.15;
-}
-
-.brand__name span {
-  margin-top: 4px;
-  color: #94a5bc;
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 1.65px;
-}
-
-.sidebar__caption {
-  margin: 48px 10px 12px;
-  color: #8092aa;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.55px;
-}
-
-.side-nav {
-  display: grid;
-  gap: 5px;
-}
-
-.side-nav__link {
-  position: relative;
-  display: flex;
-  min-height: 42px;
-  align-items: center;
-  gap: 12px;
-  padding: 0 11px;
-  border-radius: 7px;
-  color: #aab8ca;
-  font-size: 12px;
-  font-weight: 550;
-  text-decoration: none;
-  transition:
-    color 150ms ease,
-    background 150ms ease;
-}
-
-.side-nav__link:hover {
-  color: #fff;
-  background: rgb(255 255 255 / 6%);
-}
-
-.side-nav__link.is-active {
-  color: #fff;
-  background: #203954;
-  box-shadow: inset 2px 0 #46d3b9;
-}
-
-.side-nav__link svg {
-  width: 17px;
-  height: 17px;
-  flex: 0 0 17px;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.65;
-}
-
-.side-nav__count {
-  display: grid;
-  min-width: 22px;
-  height: 21px;
-  place-items: center;
-  margin-left: auto;
-  border-radius: 10px;
-  color: #c8d7e7;
-  background: rgb(255 255 255 / 9%);
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.sidebar__bottom {
-  margin-top: auto;
-}
-
-.network-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 4px 21px;
-  padding: 13px 10px;
-  border: 1px solid rgb(199 215 235 / 10%);
-  border-radius: 8px;
-  background: rgb(255 255 255 / 3%);
-}
-
-.network-status__dot,
 .refresh-dot {
   width: 8px;
   height: 8px;
@@ -153,31 +17,6 @@
   box-shadow: 0 0 0 3px rgb(46 201 168 / 13%);
 }
 
-.network-status div {
-  display: grid;
-  gap: 2px;
-}
-
-.network-status strong {
-  color: #e5ebf3;
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.network-status div span {
-  color: #8fa0b6;
-  font-size: 9px;
-}
-
-.sidebar__version {
-  padding: 0 9px;
-  color: #74869d;
-  font-size: 8px;
-  font-weight: 650;
-  letter-spacing: 0.9px;
-}
-
-.sidebar__version span,
 .footer-divider {
   padding: 0 4px;
   color: #a9b5c5;
@@ -185,7 +24,6 @@
 
 .main-content {
   min-height: 100vh;
-  margin-left: 248px;
   background: #f4f6f9;
 }
 
@@ -294,7 +132,6 @@
 
 .dashboard-content {
   display: grid;
-  max-width: 1640px;
   gap: 21px;
   margin: 0 auto;
   padding: 26px 42px 25px;
@@ -382,9 +219,7 @@
 }
 
 .filter-control select:focus-visible,
-.reset-button:focus-visible,
-.side-nav__link:focus-visible,
-.brand:focus-visible {
+.reset-button:focus-visible {
   outline: 2px solid #3fbda7;
   outline-offset: 2px;
 }
@@ -576,6 +411,112 @@
   color: #8994a2;
   font-size: 9px;
   line-height: 1.3;
+}
+
+.attention-callout {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  border: 1px solid #f0dfc8;
+  border-radius: 8px;
+  background: #fffaf3;
+  box-shadow: 0 2px 5px rgb(21 39 61 / 2%);
+}
+
+.attention-callout--critical {
+  border-color: #efd4d2;
+  background: #fff7f6;
+}
+
+.attention-callout--warning {
+  border-color: #f0dfc8;
+  background: #fffaf3;
+}
+
+.attention-callout--watch {
+  border-color: #eadfc1;
+  background: #fffdf5;
+}
+
+.attention-callout--healthy {
+  border-color: #dcebe5;
+  background: #f7fbf9;
+}
+
+.attention-callout__icon {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  place-items: center;
+  border-radius: 7px;
+  color: #b2783b;
+  background: #f9eddb;
+}
+
+.attention-callout--critical .attention-callout__icon {
+  color: #b64c4e;
+  background: #f9e6e5;
+}
+
+.attention-callout--watch .attention-callout__icon {
+  color: #9a782c;
+  background: #f7f0d7;
+}
+
+.attention-callout--healthy .attention-callout__icon {
+  color: #23846f;
+  background: #e8f4ee;
+}
+
+.attention-callout__icon svg {
+  width: 16px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.65;
+}
+
+.attention-callout__content {
+  min-width: 0;
+}
+
+.attention-callout__label {
+  margin-bottom: 3px;
+  color: #8793a2;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.attention-callout__title {
+  color: #34465c;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.attention-callout__detail {
+  margin-top: 2px;
+  color: #778496;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.attention-callout__scope {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 5px 7px;
+  border: 1px solid rgb(113 128 148 / 16%);
+  border-radius: 5px;
+  color: #7a8797;
+  background: rgb(255 255 255 / 55%);
+  font-size: 8px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .panel {
@@ -961,14 +902,6 @@
 }
 
 @media (max-width: 1180px) {
-  .sidebar {
-    width: 218px;
-  }
-
-  .main-content {
-    margin-left: 218px;
-  }
-
   .page-header {
     padding-right: 27px;
     padding-left: 27px;
@@ -997,42 +930,6 @@
 }
 
 @media (max-width: 850px) {
-  .sidebar {
-    position: static;
-    width: 100%;
-    min-height: auto;
-    padding: 13px 18px 10px;
-  }
-
-  .brand {
-    padding: 0 3px 11px;
-  }
-
-  .sidebar__caption,
-  .sidebar__bottom {
-    display: none;
-  }
-
-  .side-nav {
-    display: flex;
-    overflow-x: auto;
-    gap: 4px;
-    padding-top: 7px;
-    border-top: 1px solid rgb(255 255 255 / 10%);
-  }
-
-  .side-nav__link {
-    min-height: 36px;
-    flex: 0 0 auto;
-    gap: 8px;
-    padding: 0 10px;
-    font-size: 10px;
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
   .page-header {
     min-height: 108px;
   }
@@ -1090,6 +987,18 @@
 
   .section-heading {
     align-items: flex-start;
+  }
+
+  .attention-callout {
+    align-items: flex-start;
+    padding: 11px;
+  }
+
+  .attention-callout__scope {
+    max-width: 104px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .period-note {
