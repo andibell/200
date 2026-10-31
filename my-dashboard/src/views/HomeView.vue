@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import MetricCard from '../components/MetricCard.vue'
+import metrics from '../data/metrics.json'
 
 type RegionName = 'North America' | 'Europe' | 'Asia Pacific' | 'Latin America'
 type Severity = 'Critical' | 'High' | 'Medium' | 'Low'
@@ -24,160 +25,20 @@ interface ExceptionRecord {
   description: string
 }
 
-const regions: Array<{
+interface RegionBaseline {
   name: RegionName
   baseShipments: number
   targetOnTime: number
   averageCost: number
-}> = [
-  { name: 'North America', baseShipments: 190, targetOnTime: 96.4, averageCost: 920 },
-  { name: 'Europe', baseShipments: 132, targetOnTime: 94.8, averageCost: 875 },
-  { name: 'Asia Pacific', baseShipments: 116, targetOnTime: 92.5, averageCost: 810 },
-  { name: 'Latin America', baseShipments: 84, targetOnTime: 95.7, averageCost: 760 },
-]
+}
+
+const regions = metrics.regions as RegionBaseline[]
+const exceptions = metrics.exceptions as ExceptionRecord[]
 
 const dateOptions = [
   { label: 'Last 7 Days', value: '7' },
   { label: 'Last 30 Days', value: '30' },
   { label: 'Last 90 Days', value: '90' },
-]
-
-const exceptions: ExceptionRecord[] = [
-  {
-    id: 'FF-2841',
-    region: 'Asia Pacific',
-    reference: 'APAC-SEA-2048',
-    type: 'Weather Delay',
-    severity: 'Critical',
-    daysAgo: 1,
-    description: 'Severe weather is affecting port departures in the region.',
-  },
-  {
-    id: 'FF-2838',
-    region: 'Europe',
-    reference: 'EU-FRA-1182',
-    type: 'Missed Connection',
-    severity: 'High',
-    daysAgo: 2,
-    description: 'A missed transfer connection may impact the delivery window.',
-  },
-  {
-    id: 'FF-2834',
-    region: 'North America',
-    reference: 'NA-CHI-7390',
-    type: 'Capacity Constraint',
-    severity: 'High',
-    daysAgo: 3,
-    description: 'Limited carrier availability is delaying outbound assignment.',
-  },
-  {
-    id: 'FF-2829',
-    region: 'Latin America',
-    reference: 'LAT-MEX-4316',
-    type: 'Customs Hold',
-    severity: 'Medium',
-    daysAgo: 4,
-    description: 'Documentation review is taking longer than the planned window.',
-  },
-  {
-    id: 'FF-2825',
-    region: 'Asia Pacific',
-    reference: 'APAC-SIN-9903',
-    type: 'Capacity Constraint',
-    severity: 'High',
-    daysAgo: 7,
-    description: 'A temporary equipment shortage is affecting lane capacity.',
-  },
-  {
-    id: 'FF-2819',
-    region: 'Europe',
-    reference: 'EU-AMS-6410',
-    type: 'Weather Delay',
-    severity: 'Medium',
-    daysAgo: 10,
-    description: 'Weather-related congestion is slowing regional handoff times.',
-  },
-  {
-    id: 'FF-2811',
-    region: 'North America',
-    reference: 'NA-DAL-2831',
-    type: 'Missed Connection',
-    severity: 'Low',
-    daysAgo: 14,
-    description: 'A revised transfer schedule has extended expected transit time.',
-  },
-  {
-    id: 'FF-2806',
-    region: 'Latin America',
-    reference: 'LAT-SAO-5520',
-    type: 'Capacity Constraint',
-    severity: 'Medium',
-    daysAgo: 18,
-    description: 'Peak-period demand is reducing available linehaul capacity.',
-  },
-  {
-    id: 'FF-2798',
-    region: 'Asia Pacific',
-    reference: 'APAC-HKG-8044',
-    type: 'Weather Delay',
-    severity: 'Critical',
-    daysAgo: 22,
-    description: 'Port congestion following a storm is extending transit time.',
-  },
-  {
-    id: 'FF-2789',
-    region: 'Europe',
-    reference: 'EU-MAD-1765',
-    type: 'Missed Connection',
-    severity: 'High',
-    daysAgo: 27,
-    description: 'A downstream transfer was missed during the scheduled handoff.',
-  },
-  {
-    id: 'FF-2774',
-    region: 'North America',
-    reference: 'NA-ATL-6092',
-    type: 'Capacity Constraint',
-    severity: 'Medium',
-    daysAgo: 34,
-    description: 'A short-term carrier shortage is creating a dispatch backlog.',
-  },
-  {
-    id: 'FF-2763',
-    region: 'Latin America',
-    reference: 'LAT-BOG-3207',
-    type: 'Customs Hold',
-    severity: 'Low',
-    daysAgo: 45,
-    description: 'A routine review is pending at the regional entry point.',
-  },
-  {
-    id: 'FF-2757',
-    region: 'Asia Pacific',
-    reference: 'APAC-TYO-7721',
-    type: 'Missed Connection',
-    severity: 'High',
-    daysAgo: 58,
-    description: 'A transfer delay has moved the estimated arrival outside target.',
-  },
-  {
-    id: 'FF-2748',
-    region: 'Europe',
-    reference: 'EU-RTM-8035',
-    type: 'Weather Delay',
-    severity: 'Medium',
-    daysAgo: 75,
-    description: 'Adverse conditions have slowed a scheduled regional movement.',
-  },
-  {
-    id: 'FF-2732',
-    region: 'North America',
-    reference: 'NA-LAX-1944',
-    type: 'Capacity Constraint',
-    severity: 'High',
-    daysAgo: 83,
-    description: 'Demand is above planned capacity on this outbound corridor.',
-  },
 ]
 
 const today = new Date()
